@@ -1,0 +1,2 @@
+{ "id": "zk-spike", "name": "Zettelkasten spike", "version": "0.0.1", "minAppVersion": "1.5.0",
+  "description": "Spike: Word, Excel and web page readers, and runnable code blocks.", "author": "Andrew R. Kane", "isDesktopOnly": true }

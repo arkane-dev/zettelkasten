@@ -1,0 +1,15 @@
+.venv/
+node_modules/
+spike/corpus/
+spike/rag/input/
+spike/rag/output/
+spike/rag/cache/
+spike/rag/logs/
+spike/smoke/
+spike/vault/
+spike/.obsidian-data/
+spike/plugin-test/main.js
+spike/*.log
+spike/convert.json
+spike/shots/
+__pycache__/
