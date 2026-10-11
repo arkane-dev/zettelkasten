@@ -148,6 +148,40 @@ Embeddings failed the same way as the other runs.
 
 For community notes, the fast graph wins if we only write levels 0 and 1, which was already the plan. Graph plus top-level reports would take about 53 minutes, against about 4 h 13 min for the gemma3 graph. Entity notes still need an LLM or a typed NER model (GLiNER), because noun phrases have no type or description. Next test: fast graph for communities, GLiNER for entities, with references and appendices stripped first.
 
+## GraphRAG: hybrid (stripped corpus, fast graph, top-level reports, GLiNER entities)
+
+The fast run's verdict, tested end to end.
+
+- `strip.py` cuts reference lists and appendices from the 19 papers. Every cut lands on a real References, Bibliography or Appendix heading. 376 chunks become 292.
+- Fast graph as before. `index_top.py` adds one workflow that writes reports for levels 0 and 1 only. GraphRAG has no setting for that. No embeddings.
+- `gliner_entities.py` tags each chunk with GLiNER (`urchade/gliner_medium-v2.1`). Types: concept, method, dataset, tool, material, ingredient. No people or quantities.
+
+| Measure | gemma3 (LLM graph) | fast | hybrid |
+|---|---|---|---|
+| Wall time | 5 h 29 min | 7 h 52 min | **35 min** |
+| Graph build | 3 h 16 min | 6 min | 5 min |
+| Community reports | 2 h 11 min, 984 | 7 h 33 min, 976 | 30 min, 85 |
+| Typed entities | 8,928 (LLM) | none | 1,734 (GLiNER, 8 s) |
+| Purity, level 0 / level 1 | 98.8% / 99.6% | 98.9% / 99.7% | 98.8% / 99.6% |
+| Level-1 communities spanning >1 document | 31% | 59% | 60% |
+| People / quantity-like entities | 3,085 / 448 | untyped | 0 / 4 |
+
+### Findings
+
+- **Same communities, a tenth of the time.** Purity and reach match the fast run. Writing only the 85 top-level reports cuts the run to 35 minutes.
+- **Stripping removes most of the noise.** FIGURE, PROCEEDINGS, APPENDIX, LOST and author surnames drop out of the top noun phrases. Left over: page headers (ICLR, CONFERENCE PAPER, PREPRINT) and stray words (GOOD IDEA, DON). A stop-list handles those.
+- **GLiNER entities make good link targets.** Joined to communities by shared chunks, the top entities read like a note's links. HRM → sudoku-extreme, hierarchical memory, q-learning. Cosplay armor → worbla, EVA foam, hot air gun, Dremel. Game theory → prisoner's dilemma, shadow of the future, theory of mind.
+- **GLiNER types are rough.** Model names come out as datasets (gpt 4.1, loras). Maker supplies come out as ingredients (resin, body filler, gesso). Some generic phrases get through ("our method", "supplementary material"). 1,343 of 1,734 entities appear in only one chunk.
+- **No descriptions.** GLiNER finds and types entities. It doesn't write about them. An entity note would need a short LLM pass, and only for entities worth a note: the 391 that appear in two or more chunks.
+
+### Verdict
+
+Use the hybrid for Phase 4. Strip, fast graph, top-level reports, GLiNER entities. That's about 35 minutes for this corpus, against 5.5 hours, with the same community quality and cleaner entities. Still to do:
+
+- Stop-list for page headers and stray noun phrases.
+- Better GLiNER labels. Try "AI model" and "software", and split "material" from "ingredient" by domain.
+- A short LLM description pass for entities in two or more chunks.
+
 ## Design note: keeping the graph in sync
 
 ### What GraphRAG does (v3.3.0, `--method standard-update`)

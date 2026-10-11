@@ -21,3 +21,8 @@ spike/rag-fast/input/
 spike/rag-fast/output/
 spike/rag-fast/cache/
 spike/rag-fast/logs/
+spike/rag-hybrid/input/
+spike/rag-hybrid/output/
+spike/rag-hybrid/cache/
+spike/rag-hybrid/logs/
+spike/rag-hybrid/gliner/
