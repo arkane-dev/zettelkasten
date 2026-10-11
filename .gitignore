@@ -17,3 +17,7 @@ spike/rag-qwen/input/
 spike/rag-qwen/output/
 spike/rag-qwen/cache/
 spike/rag-qwen/logs/
+spike/rag-fast/input/
+spike/rag-fast/output/
+spike/rag-fast/cache/
+spike/rag-fast/logs/
