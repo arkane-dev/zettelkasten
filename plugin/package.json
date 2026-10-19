@@ -16,5 +16,9 @@
 		"obsidian": "1.14.4",
 		"typescript": "5.9.3",
 		"vitest": "4.0.18"
+	},
+	"dependencies": {
+		"mammoth": "1.13.0",
+		"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
 	}
 }

@@ -51,3 +51,63 @@ def test_config_from_env(tmp_path: Path):
 def test_config_needs_a_token(tmp_path: Path):
     with pytest.raises(ValueError):
         Config.from_env(tmp_path, {})
+
+
+# Sources through the API. The LLM points at a closed port, so summaries fail fast.
+
+
+@pytest.fixture
+def api(tmp_path: Path) -> TestClient:
+    config = Config(vault=tmp_path, token=TOKEN, llm_base_url='http://127.0.0.1:9/v1')
+    return TestClient(create_app(config))
+
+
+def wait(api: TestClient, job: dict) -> dict:
+    import time
+
+    for _ in range(200):
+        job = api.get(f"/jobs/{job['id']}", headers=bearer()).json()
+        if job['state'] in ('done', 'error'):
+            return job
+        time.sleep(0.05)
+    raise AssertionError(f'job never finished: {job}')
+
+
+def test_upload_a_file(api: TestClient, tmp_path: Path):
+    r = api.post('/sources/file', params={'name': 'Field notes.txt'}, content=b'Leiden is fast.', headers=bearer())
+    assert r.status_code == 202
+    job = wait(api, r.json())
+    assert job['state'] == 'done'
+    assert job['note'] == 'Sources/field-notes/Field notes.md'
+    assert 'Summary failed' in job['warning']
+    assert (tmp_path / job['note']).exists()
+    listed = api.get('/sources', headers=bearer()).json()
+    assert listed == [{'slug': 'field-notes', 'title': 'Field notes', 'kind': 'text', 'note': job['note']}]
+
+
+def test_upload_rejects_unknown_types_and_empty_files(api: TestClient):
+    assert api.post('/sources/file', params={'name': 'run.exe'}, content=b'x', headers=bearer()).status_code == 400
+    assert api.post('/sources/file', params={'name': 'a.pdf'}, content=b'', headers=bearer()).status_code == 400
+
+
+def test_upload_name_cannot_escape_the_vault(api: TestClient, tmp_path: Path):
+    r = api.post('/sources/file', params={'name': '../../evil.txt'}, content=b'x', headers=bearer())
+    job = wait(api, r.json())
+    assert job['note'] == 'Sources/evil/evil.md'
+
+
+def test_bad_url_is_refused(api: TestClient):
+    assert api.post('/sources/url', json={'url': 'file:///etc/passwd'}, headers=bearer()).status_code == 400
+
+
+def test_recapture_and_summarise_need_a_source(api: TestClient):
+    assert api.post('/sources/nope/recapture', headers=bearer()).status_code == 404
+    assert api.post('/sources/nope/summarise', headers=bearer()).status_code == 404
+    job = wait(api, api.post('/sources/file', params={'name': 'a.txt'}, content=b'x', headers=bearer()).json())
+    assert api.post('/sources/a/recapture', headers=bearer()).status_code == 400
+    assert api.post('/sources/a/summarise', headers=bearer()).status_code == 202
+    assert job['state'] == 'done'
+
+
+def test_unknown_job(api: TestClient):
+    assert api.get('/jobs/nope', headers=bearer()).status_code == 404

@@ -5,3 +5,84 @@
 .zk-status[data-state='starting'] {
 	color: var(--text-muted);
 }
+
+/* Readers, in a tab */
+.zk-reader {
+	padding: var(--size-4-4);
+}
+.zk-reader:has(> .zk-snapshot) {
+	padding: 0;
+}
+.zk-snapshot {
+	width: 100%;
+	height: 100%;
+	border: 0;
+	background: #fff;
+}
+
+/* Readers, inside a source note */
+.zk-embed {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	overflow: hidden;
+}
+.zk-embed-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	padding: var(--size-4-1) var(--size-4-2);
+	background: var(--background-secondary);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+.zk-embed-body {
+	max-height: 70vh;
+	overflow: auto;
+	padding: var(--size-4-3);
+}
+.zk-embed-body:has(> .zk-snapshot) {
+	height: 70vh;
+	padding: 0;
+	overflow: hidden;
+}
+
+/* Sheets */
+.zk-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-1);
+	margin-bottom: var(--size-4-2);
+}
+.zk-tabs button.is-active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+.zk-sheet {
+	overflow: auto;
+}
+.zk-sheet td {
+	white-space: nowrap;
+}
+
+.zk-muted {
+	color: var(--text-muted);
+}
+.zk-error {
+	color: var(--text-error);
+	white-space: pre-wrap;
+}
+
+/* Add a source */
+.zk-drop {
+	margin-top: var(--size-4-3);
+	padding: var(--size-4-6);
+	border: 2px dashed var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	text-align: center;
+	color: var(--text-muted);
+}
+.zk-drop.is-over {
+	border-color: var(--interactive-accent);
+	color: var(--text-normal);
+}

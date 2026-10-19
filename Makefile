@@ -3,10 +3,11 @@ export PATH := $(VENV)/bin:$(PATH)
 
 .PHONY: setup plugin dev test dev-vault obsidian
 
-setup:          ## venv with node, the sidecar (editable) and plugin packages
+setup:          ## venv with node, SingleFile, the sidecar (editable) and plugin packages
 	test -d $(VENV) || uv venv -q --python 3.12 $(VENV)
 	test -x $(VENV)/bin/node || { uv pip install -q --python $(VENV) nodeenv && $(VENV)/bin/nodeenv -p --node=lts -q; }
 	uv pip install -q --python $(VENV) -e 'sidecar[dev]'
+	npm install -g --silent single-file-cli@2.18.5
 	cd plugin && npm ci
 
 plugin:         ## type-check and build plugin/main.js

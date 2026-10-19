@@ -11,6 +11,7 @@ const options = {
 	external: ['obsidian', 'electron', ...builtinModules, ...builtinModules.map((m) => `node:${m}`)],
 	outfile: 'main.js',
 	sourcemap: process.argv.includes('--watch') ? 'inline' : false,
+	minify: !process.argv.includes('--watch'),
 	logLevel: 'info'
 };
 

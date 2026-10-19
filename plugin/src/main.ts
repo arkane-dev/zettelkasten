@@ -1,7 +1,10 @@
-import { App, FileSystemAdapter, Notice, Plugin, PluginSettingTab, Setting, TextComponent, requestUrl } from 'obsidian';
+import { App, FileSystemAdapter, Notice, Plugin, PluginSettingTab, Setting, TFile, TextComponent, requestUrl } from 'obsidian';
 import { spawn } from 'child_process';
 import { DEFAULT_SETTINGS, ZkSettings, mergeSettings, sidecarEnv } from './settings';
 import { Sidecar, SidecarState } from './sidecar';
+import { registerReaders } from './readers';
+import { AddSourceModal, Ingest } from './ingest';
+import { isSourceFile } from './jobs';
 
 const LABELS: Record<SidecarState, string> = {
 	stopped: 'ZK: stopped',
@@ -13,6 +16,7 @@ const LABELS: Record<SidecarState, string> = {
 export default class Zettelkasten extends Plugin {
 	settings: ZkSettings = { ...DEFAULT_SETTINGS };
 	sidecar!: Sidecar;
+	ingest!: Ingest;
 	private status!: HTMLElement;
 
 	async onload() {
@@ -32,9 +36,15 @@ export default class Zettelkasten extends Plugin {
 
 		this.sidecar = new Sidecar({
 			spawn,
-			request: async (url, headers) => {
-				const r = await requestUrl({ url, headers, throw: false });
-				return { status: r.status, json: r.status === 200 ? r.json : null };
+			request: async (url, headers, init) => {
+				const r = await requestUrl({ url, headers, ...init, throw: false });
+				let json: unknown = null;
+				try {
+					json = r.json;
+				} catch {
+					// not JSON
+				}
+				return { status: r.status, json };
 			},
 			onChange: (state) => this.showState(state)
 		});
@@ -44,6 +54,43 @@ export default class Zettelkasten extends Plugin {
 		this.addCommand({ id: 'stop-sidecar', name: 'Stop the sidecar', callback: () => this.sidecar.stop() });
 		this.addCommand({ id: 'sidecar-logs', name: 'Copy the sidecar log', callback: () => this.copyLogs() });
 		this.addSettingTab(new ZkSettingTab(this.app, this));
+
+		registerReaders(this);
+		this.ingest = new Ingest(this);
+		const addSource = () => new AddSourceModal(this.app, this.ingest).open();
+		this.addRibbonIcon('book-plus', 'Add a source', addSource);
+		this.addCommand({ id: 'add-source', name: 'Add a source', callback: addSource });
+		this.addCommand({
+			id: 'recapture',
+			name: 'Capture this web page again',
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!this.ingest.isWebSource(file)) return false;
+				if (!checking) this.ingest.recapture(this.ingest.sourceSlug(file)!);
+				return true;
+			}
+		});
+		this.addCommand({
+			id: 'summarise',
+			name: 'Summarise this source again',
+			checkCallback: (checking) => {
+				const slug = this.ingest.sourceSlug(this.app.workspace.getActiveFile());
+				if (!slug) return false;
+				if (!checking) this.ingest.summarise(slug);
+				return true;
+			}
+		});
+		this.registerEvent(
+			this.app.workspace.on('file-menu', (menu, file) => {
+				if (!(file instanceof TFile) || file.path.startsWith('Sources/') || !isSourceFile(file.name)) return;
+				menu.addItem((item) =>
+					item
+						.setTitle('Add as a source')
+						.setIcon('book-plus')
+						.onClick(async () => this.ingest.addFiles([{ name: file.name, data: await this.app.vault.readBinary(file) }]))
+				);
+			})
+		);
 
 		this.app.workspace.onLayoutReady(() => this.startSidecar(false));
 	}
@@ -116,6 +163,10 @@ class ZkSettingTab extends PluginSettingTab {
 			.setName('Sidecar command')
 			.setDesc('Full path to zk-sidecar, for example …/zettelkasten/.venv/bin/zk-sidecar.')
 			.addText((t) => this.bind(t, 'sidecarCommand', '/path/to/zk-sidecar'));
+		new Setting(containerEl)
+			.setName('Browser for saving pages')
+			.setDesc('Chromium or Chrome. Leave empty to find one.')
+			.addText((t) => this.bind(t, 'browserPath', 'auto'));
 
 		new Setting(containerEl).setName('Models').setHeading();
 		new Setting(containerEl)
@@ -131,6 +182,13 @@ class ZkSettingTab extends PluginSettingTab {
 			.addText((t) => {
 				t.inputEl.type = 'password';
 				this.bind(t, 'llmApiKey', '');
+			});
+		new Setting(containerEl)
+			.setName('Context length')
+			.setDesc('The model\'s context window in tokens. Long sources are split to fit it.')
+			.addText((t) => {
+				t.inputEl.type = 'number';
+				this.bind(t, 'llmContext', DEFAULT_SETTINGS.llmContext);
 			});
 		new Setting(containerEl)
 			.setName('Embedding model')

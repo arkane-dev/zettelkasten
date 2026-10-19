@@ -15,11 +15,28 @@ spike/     Phase 0 experiments. Not part of the build.
 
 The plugin starts the sidecar when the vault opens. The sidecar takes a free port on 127.0.0.1 and prints a ready line. Every request needs a token that's new each session. The sidecar exits when Obsidian closes, even if Obsidian crashes.
 
-Model settings live in the plugin settings, per vault. Ollama is the default. Any OpenAI-compatible API works.
+Model settings live in the plugin settings, per vault. Ollama is the default. Any OpenAI-compatible API works. Set the context length to match the model, since Ollama's OpenAI API can't change it per request. Long sources are split to fit.
+
+## Sources
+
+Add a PDF, Word, Excel, PowerPoint, HTML, Markdown or text file, or a web page. Use the ribbon, the "Add a source" command, drag and drop, or "Add as a source" on a file in the vault.
+
+```text
+Sources/<slug>/
+  <Title>.md       the note: reader, summary, your notes
+  original.pdf     or .docx, .xlsx, … or snapshot-2026-10-19.html for web pages
+  content.md       extracted text, for search and GraphRAG
+```
+
+- Web pages are saved with SingleFile as one file, styles and images inlined. Scripts are blocked.
+- "Capture this web page again" adds a dated snapshot. It never overwrites one, and adds nothing if the text hasn't changed.
+- The summary sits between `<!-- zk:ai -->` markers, and "Summarise this source again" replaces only that. Software never touches `## Notes`.
+- The same file or URL twice opens the source you already have.
+- Text: PyMuPDF for PDFs, with OCR on pages that have no text. trafilatura for web pages. MarkItDown for Office files.
 
 ## Develop
 
-Needs `uv` and Obsidian.
+Needs `uv` and Obsidian. Saving web pages needs Chromium: the system one, or Playwright's in `~/.cache/ms-playwright`.
 
 ```sh
 make setup      # .venv with node, the sidecar, plugin packages
@@ -41,7 +58,7 @@ This copies the plugin in and points it at this repo's sidecar. Open the folder 
 
 ## Status
 
-Phase 1, the scaffold. Next is Phase 2: sources.
+Phase 2, sources. Next is Phase 3: notebooks and runnable code.
 
 ## Licence
 

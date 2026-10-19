@@ -7,7 +7,11 @@ export interface ZkSettings {
 	llmBaseUrl: string;
 	llmModel: string;
 	llmApiKey: string;
+	/** The model's context window in tokens, as text. */
+	llmContext: string;
 	embedModel: string;
+	/** Chromium for SingleFile. Empty means the sidecar finds one. */
+	browserPath: string;
 }
 
 export const DEFAULT_SETTINGS: ZkSettings = {
@@ -15,7 +19,9 @@ export const DEFAULT_SETTINGS: ZkSettings = {
 	llmBaseUrl: 'http://127.0.0.1:11434/v1',
 	llmModel: 'gemma3:27b',
 	llmApiKey: '',
-	embedModel: 'nomic-embed-text'
+	llmContext: '8192',
+	embedModel: 'nomic-embed-text',
+	browserPath: ''
 };
 
 /** Fill gaps from the defaults. Unknown keys from older versions are dropped. */
@@ -34,6 +40,8 @@ export function sidecarEnv(s: ZkSettings): Record<string, string> {
 		ZK_LLM_BASE_URL: s.llmBaseUrl,
 		ZK_LLM_MODEL: s.llmModel,
 		ZK_LLM_API_KEY: s.llmApiKey,
-		ZK_EMBED_MODEL: s.embedModel
+		ZK_LLM_CONTEXT: s.llmContext,
+		ZK_EMBED_MODEL: s.embedModel,
+		ZK_BROWSER: s.browserPath
 	};
 }

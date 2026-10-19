@@ -9,7 +9,16 @@ import type { ChildProcess, SpawnOptions } from 'child_process';
 export type SidecarState = 'stopped' | 'starting' | 'ready' | 'error';
 
 export type SpawnFn = (command: string, args: string[], options: SpawnOptions) => ChildProcess;
-export type RequestFn = (url: string, headers: Record<string, string>) => Promise<{ status: number; json: unknown }>;
+export interface RequestInit {
+	method?: 'GET' | 'POST';
+	body?: string | ArrayBuffer;
+	contentType?: string;
+}
+export type RequestFn = (
+	url: string,
+	headers: Record<string, string>,
+	init?: RequestInit
+) => Promise<{ status: number; json: unknown }>;
 
 export interface ReadyInfo {
 	port: number;
@@ -154,19 +163,38 @@ export class Sidecar {
 
 	/** GET a sidecar route as JSON. */
 	async get<T = unknown>(path: string): Promise<T> {
+		return this.call<T>(this.port(), path);
+	}
+
+	/** POST JSON, or raw bytes with a content type. */
+	async post<T = unknown>(path: string, body?: unknown, contentType = 'application/json'): Promise<T> {
+		const raw = body instanceof ArrayBuffer;
+		return this.call<T>(this.port(), path, {
+			method: 'POST',
+			body: raw ? body : JSON.stringify(body ?? {}),
+			contentType: raw ? contentType : 'application/json'
+		});
+	}
+
+	private port(): number {
 		if (this.state !== 'ready' || !this.info) throw new Error('The sidecar is not running.');
-		return this.call<T>(this.info.port, path);
+		return this.info.port;
 	}
 
 	private async health(port: number): Promise<void> {
 		await this.call(port, '/health');
 	}
 
-	private async call<T>(port: number, path: string): Promise<T> {
-		const res = await this.opts.request(`http://127.0.0.1:${port}${path}`, {
-			Authorization: `Bearer ${this.token}`
-		});
-		if (res.status !== 200) throw new Error(`${path} returned ${res.status}`);
+	private async call<T>(port: number, path: string, init?: RequestInit): Promise<T> {
+		const res = await this.opts.request(
+			`http://127.0.0.1:${port}${path}`,
+			{ Authorization: `Bearer ${this.token}` },
+			init
+		);
+		if (res.status < 200 || res.status >= 300) {
+			const detail = (res.json as { detail?: unknown } | null)?.detail;
+			throw new Error(typeof detail === 'string' ? detail : `${path} returned ${res.status}`);
+		}
 		return res.json as T;
 	}
 

@@ -2,7 +2,7 @@
 	"id": "zettelkasten",
 	"name": "Zettelkasten",
 	"version": "0.1.0",
-	"minAppVersion": "1.5.0",
+	"minAppVersion": "1.5.7",
 	"description": "Sources as notes, GraphRAG communities and runnable code, backed by a local Python service.",
 	"author": "Andrew R. Kane",
 	"authorUrl": "https://andrewrkane.com",

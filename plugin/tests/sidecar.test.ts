@@ -30,7 +30,7 @@ class FakeProc extends EventEmitter {
 function setup(status = 200) {
 	const procs: FakeProc[] = [];
 	const states: SidecarState[] = [];
-	const request = vi.fn(async (_url: string, _headers: Record<string, string>) => ({ status, json: { ok: true } }));
+	const request = vi.fn(async (_url: string, _headers: Record<string, string>, _init?: unknown) => ({ status, json: { ok: true } as unknown }));
 	const sidecar = new Sidecar({
 		spawn: (_cmd, args, opts) => {
 			const p = new FakeProc();
@@ -152,6 +152,28 @@ describe('Sidecar', () => {
 		await expect(second).resolves.toMatchObject({ port: 2222 });
 		expect(sidecar.info?.port).toBe(2222);
 		void first;
+	});
+
+	it('post() sends JSON and surfaces the error detail', async () => {
+		const { sidecar, procs, request } = setup();
+		const started = sidecar.start('zk', '/v', {});
+		procs[0].ready();
+		await started;
+		request.mockResolvedValueOnce({ status: 400, json: { detail: 'not a web address' } });
+		await expect(sidecar.post('/sources/url', { url: 'x' })).rejects.toThrow('not a web address');
+		const [url, , init] = request.mock.calls.at(-1)!;
+		expect(url).toBe('http://127.0.0.1:4321/sources/url');
+		expect(init).toEqual({ method: 'POST', body: '{"url":"x"}', contentType: 'application/json' });
+	});
+
+	it('post() sends bytes as they are', async () => {
+		const { sidecar, procs, request } = setup();
+		const started = sidecar.start('zk', '/v', {});
+		procs[0].ready();
+		await started;
+		const data = new Uint8Array([1, 2, 3]).buffer;
+		await sidecar.post('/sources/file?name=a.pdf', data, 'application/octet-stream');
+		expect(request.mock.calls.at(-1)![2]).toEqual({ method: 'POST', body: data, contentType: 'application/octet-stream' });
 	});
 
 	it('get() needs a running sidecar', async () => {
