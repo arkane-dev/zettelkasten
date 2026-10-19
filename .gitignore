@@ -1,5 +1,12 @@
 .venv/
 node_modules/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+plugin/main.js
+plugin/data.json
+dev-vault/
+.obsidian-dev/
 spike/corpus/
 spike/rag/input/
 spike/rag/output/
@@ -12,7 +19,6 @@ spike/plugin-test/main.js
 spike/*.log
 spike/convert.json
 spike/shots/
-__pycache__/
 spike/rag-qwen/input/
 spike/rag-qwen/output/
 spike/rag-qwen/cache/

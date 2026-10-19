@@ -1,0 +1,7 @@
+/* Zettelkasten plugin. Obsidian's own colour variables, so it fits any theme. */
+.zk-status[data-state='error'] {
+	color: var(--text-error);
+}
+.zk-status[data-state='starting'] {
+	color: var(--text-muted);
+}
