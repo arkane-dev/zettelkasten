@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ..jobs import Job
 from ..summarise import Summariser
+from ..text import strip_references
 from .capture import check_url
 from .convert import Converted, convert, kind_of
 from .store import CONTENT, Source, SourceStore, clean_title
@@ -136,6 +137,8 @@ class SourceService:
 
     def _summarise(self, job: Job, src: Source, text: str) -> None:
         job.step = 'summarising'
+        if src.meta.get('kind') == 'pdf':
+            text = strip_references(text)  # authors and venues add nothing, and push long papers past the context
         try:
             summary = self.summariser().summarise(src.meta.get('title', src.slug), text)
         except Exception as e:  # noqa: BLE001 - the source stays, only the summary failed

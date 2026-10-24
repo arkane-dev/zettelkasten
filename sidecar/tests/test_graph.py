@@ -168,6 +168,16 @@ def test_context_lets_sources_take_turns():
     assert heads[:3] == ['[S1] a.md', '[S2] b.md', '[S3] c.md'] and docs == ['a.md', 'b.md', 'c.md']
 
 
+def test_meta_openings_get_rewritten_or_cut():
+    from zk_sidecar.graph.reports import fix_opening
+    good = 'Worbla and EVA foam are the base materials [S1].'
+    assert fix_opening(lambda s, u: 'unused', good) == good
+    assert fix_opening(lambda s, u: good, 'These excerpts discuss worbla and EVA foam [S1].') == good
+    stubborn = lambda s, u: 'These excerpts again.'  # noqa: E731
+    assert fix_opening(stubborn, 'This report examines how models play games [S2].') == 'How models play games [S2].'
+    assert fix_opening(stubborn, 'The provided excerpts describe prompt caching.') == 'Prompt caching.'
+
+
 def test_citations_become_links():
     assert notes.cite('Fact [S1, S2]. More [S9].', ['Sources/a/A.md', 'n.md']) == \
         'Fact ([[Sources/a/A|1]], [[n|2]]). More .'

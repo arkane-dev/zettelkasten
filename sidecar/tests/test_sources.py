@@ -58,7 +58,7 @@ def service(tmp_path: Path, llm: FakeLLM, clock: Clock, pages: dict[str, str]) -
             raise RuntimeError('SingleFile failed: 404')
         out.write_text(pages[url])
 
-    return SourceService(SourceStore(tmp_path), lambda: Summariser(llm, 8192), capture, now=clock)
+    return SourceService(SourceStore(tmp_path), lambda: Summariser(llm, 8192, check=False), capture, now=clock)
 
 
 def run(fn, *args) -> Job:
@@ -188,7 +188,7 @@ def test_docx_uses_the_reader_block(tmp_path: Path, service: SourceService):
 
 
 def test_summary_failure_keeps_the_source(tmp_path: Path, clock: Clock):
-    svc = SourceService(SourceStore(tmp_path), lambda: Summariser(FakeLLM(fail=True), 8192),
+    svc = SourceService(SourceStore(tmp_path), lambda: Summariser(FakeLLM(fail=True), 8192, check=False),
                         lambda u, o: None, now=clock)
     job = run(svc.add_file, 'a.txt', b'Text.')
     assert 'Ollama is not running' in job.warning

@@ -77,6 +77,7 @@ Sources/<slug>/
 - The summary sits between `<!-- zk:ai -->` markers, and "Summarise this source again" replaces only that. Software never touches `## Notes`.
 - The same file or URL twice opens the source you already have.
 - Text: PyMuPDF for PDFs, with OCR on pages that have no text. trafilatura for web pages. MarkItDown for Office files.
+- Summaries are checked. Each claim is tested against the passages of the source that match it best. A contradicted claim is corrected, and one the source doesn't support is dropped. Reference lists and appendices are cut from papers first. On 18 spike documents this cut problem claims from about 6 per run to 2, judged by a second model (`eval/summary_eval.py`). It adds about 25% to the time a summary takes.
 
 ## Code
 

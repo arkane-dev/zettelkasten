@@ -18,6 +18,8 @@ Rules:
 - Write in English, in plain words and short sentences.
 - Cite the sources behind each finding, like [S1] or [S2, S4]. Draw on as many sources as the excerpts allow.
 - Write about the ideas. Don't mention "this report", "the excerpts" or "the study".
+- Never open the summary with "These excerpts", "This report", "The sources" or the like. Start with the topic itself.
+- Only state what the excerpts say. Don't expand an abbreviation they don't spell out. Keep comparisons as they state them.
 
 Reply with one JSON object and nothing else:
 {"title": "...", "summary": "...", "findings": [{"summary": "...", "explanation": "..."}]}
@@ -111,9 +113,41 @@ def parse(reply: str) -> Report:
     return report
 
 
+#: An opening that talks about the text instead of the topic: "These excerpts discuss…", "This report examines…".
+META_OPENING = re.compile(
+    r'^\s*(?:these|the|this|our|both|all)\s+(?:\w+\s+)?(?:excerpts?|sources?|passages?|documents?|texts?|reports?|'
+    r'notes?|stud(?:y|ies)|papers?|community|materials?|works?)\s+(?:\w+\s+)?'
+    r'(?:discuss|describe|detail|cover|explore|examine|focus|highlight|present|show|outline|address|provide|'
+    r'investigate|introduce|reveal|center|centre|concern|deal|emphasi[sz]e|delve|offer|look)\w*\s+(?:on\s+|in\s+|with\s+)?',
+    re.I)
+
+#: A rewrite that still starts with the text as its subject is no better, verb or not.
+META_NOUN = re.compile(r'^\s*(?:these|this|the)\s+(?:\w+\s+)?(?:excerpts?|sources?|reports?|passages?|documents?)\b', re.I)
+
+REWRITE_PROMPT = """Rewrite this paragraph so it starts with the topic itself.
+Don't open with "these excerpts", "this report", "the sources" or the like.
+Keep every fact and every citation like [S1]. Reply with the paragraph only."""
+
+
+def fix_opening(complete: Complete, summary: str) -> str:
+    """Ask once for a rewrite. If the model still opens with the meta phrase, cut it off."""
+    if not META_OPENING.match(summary):
+        return summary
+    try:
+        again = THINK.sub('', complete(REWRITE_PROMPT, summary)).strip().strip('"')
+    except Exception:  # noqa: BLE001  the cut below still works
+        again = ''
+    if again and not META_OPENING.match(again) and not META_NOUN.match(again) and len(again) > len(summary) // 2:
+        return again
+    rest = META_OPENING.sub('', summary, count=1)
+    return rest[:1].upper() + rest[1:]
+
+
 def write_report(complete: Complete, context: str) -> Report:
     try:
-        return parse(complete(REPORT_PROMPT, f'Excerpts:\n\n{context}'))
+        report = parse(complete(REPORT_PROMPT, f'Excerpts:\n\n{context}'))
     except (ValueError, json.JSONDecodeError):
         # One retry: small models sometimes wrap or break the JSON.
-        return parse(complete(REPORT_PROMPT + '\n\nReply with the JSON object only.', f'Excerpts:\n\n{context}'))
+        report = parse(complete(REPORT_PROMPT + '\n\nReply with the JSON object only.', f'Excerpts:\n\n{context}'))
+    report.summary = fix_opening(complete, report.summary)
+    return report
