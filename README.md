@@ -18,7 +18,7 @@ Design: [Zettelkasten: Obsidian plugin or ground-up build?](https://andrewrkane.
 
 ## Status
 
-Version 0.1.0. Tested on Linux with Obsidian 1.14, Ollama and an NVIDIA GPU. macOS and Windows should work but are untested. Not in Obsidian's community plugin list, because it needs the local service.
+Version 0.1.1. Tested on Linux with Obsidian 1.14, Ollama and an NVIDIA GPU. macOS and Windows should work but are untested. Not in Obsidian's community plugin list, because it needs the local service.
 
 ## Privacy
 
