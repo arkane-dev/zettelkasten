@@ -408,7 +408,8 @@ textarea:focus-visible {
 .menu {
 	border: 1px solid var(--nd-line-strong);
 }
-/* clip-path cuts the border off at the corners. Draw the diagonal edge back in. */
+/* clip-path cuts the border off at the corners. Draw the diagonal edge back in.
+   Inside the padding box, not over the border: past it, a scrolling modal shows scrollbars. */
 .modal::before,
 .modal::after,
 .prompt::before,
@@ -427,14 +428,14 @@ textarea:focus-visible {
 .modal::before,
 .prompt::before,
 .menu::before {
-	top: -1px;
-	left: -1px;
+	top: 0;
+	left: 0;
 }
 .modal::after,
 .prompt::after,
 .menu::after {
-	right: -1px;
-	bottom: -1px;
+	right: 0;
+	bottom: 0;
 }
 .modal {
 	--zk-cut: var(--nd-cut-md);
