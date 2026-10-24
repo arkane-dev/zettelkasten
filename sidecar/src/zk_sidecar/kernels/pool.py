@@ -125,7 +125,11 @@ class Run:
 
 
 class Session:
-    """One running kernel. A reader thread hands each iopub message to the run that sent it."""
+    """One running kernel. A reader thread hands each iopub message to the run that sent it.
+
+    ZeroMQ sockets aren't thread-safe. Only the reader touches the iopub and shell sockets,
+    except during a restart or shutdown, when the reader is paused or stopped first.
+    """
 
     def __init__(self, path: str, kernel: str, km: KernelManager, on_death: Callable[['Session'], None]):
         self.path, self.kernel, self.km = path, kernel, km
@@ -137,7 +141,10 @@ class Session:
         self.last_used = time.monotonic()
         self.closed = False
         self._on_death = on_death
-        threading.Thread(target=self._read, daemon=True, name=f'iopub {path}').start()
+        self._pause = threading.Event()
+        self._paused = threading.Event()
+        self._reader = threading.Thread(target=self._read, daemon=True, name=f'iopub {path}')
+        self._reader.start()
 
     def execute(self, run: Run, code: str) -> None:
         # Hold the lock until the run is registered, so the reader can't drop its first messages.
@@ -152,14 +159,23 @@ class Session:
         return bool(self.runs)
 
     def restart(self) -> None:
-        with self.lock:
-            self._end_runs('error', 'The kernel restarted.')
-            self.km.restart_kernel(now=True)
-            self.kc.wait_for_ready(timeout=60)
-            self.last_used = time.monotonic()
+        self._pause.set()
+        try:
+            if not self._paused.wait(5):
+                raise KernelError('The kernel is not answering. Try again.')
+            with self.lock:
+                self._end_runs('error', 'The kernel restarted.')
+                self.km.restart_kernel(now=True)
+                self.kc.wait_for_ready(timeout=60)
+                self.last_used = time.monotonic()
+        finally:
+            self._paused.clear()
+            self._pause.clear()
 
     def shutdown(self) -> None:
         self.closed = True
+        if self._reader is not threading.current_thread():
+            self._reader.join(5)
         with self.lock:
             self._end_runs('error', 'The kernel stopped.')
         try:
@@ -175,6 +191,10 @@ class Session:
 
     def _read(self) -> None:
         while not self.closed:
+            if self._pause.is_set():
+                self._paused.set()
+                time.sleep(0.05)
+                continue
             try:
                 msg = self.kc.get_iopub_msg(timeout=0.5)
             except queue.Empty:
