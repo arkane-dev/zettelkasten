@@ -14,6 +14,8 @@ export interface ZkSettings {
 	browserPath: string;
 	/** A Python with ipykernel for code. Empty means the vault's own, in .zk/python. */
 	pythonPath: string;
+	/** Rebuild the communities daily at HH:MM, if the vault changed. Empty turns it off. */
+	graphSchedule: string;
 }
 
 export const DEFAULT_SETTINGS: ZkSettings = {
@@ -24,7 +26,8 @@ export const DEFAULT_SETTINGS: ZkSettings = {
 	llmContext: '8192',
 	embedModel: 'nomic-embed-text',
 	browserPath: '',
-	pythonPath: ''
+	pythonPath: '',
+	graphSchedule: '03:00'
 };
 
 /** Fill gaps from the defaults. Unknown keys from older versions are dropped. */
@@ -46,6 +49,7 @@ export function sidecarEnv(s: ZkSettings): Record<string, string> {
 		ZK_LLM_CONTEXT: s.llmContext,
 		ZK_EMBED_MODEL: s.embedModel,
 		ZK_BROWSER: s.browserPath,
-		ZK_PYTHON: s.pythonPath
+		ZK_PYTHON: s.pythonPath,
+		ZK_GRAPH_SCHEDULE: s.graphSchedule
 	};
 }

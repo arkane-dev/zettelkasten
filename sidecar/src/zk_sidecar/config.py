@@ -41,6 +41,10 @@ class Config:
     python: str = ''
     #: Kernels with nothing to do shut down after this long.
     kernel_idle_minutes: float = 60
+    #: When to rebuild the communities each day, HH:MM. Empty or 'off' turns it off.
+    graph_schedule: str = '03:00'
+    #: Language data for the phrase extractor, shared by every vault.
+    data_dir: Path = Path('~/.cache/zk-sidecar').expanduser()
 
     @classmethod
     def from_env(cls, vault: Path, env: dict[str, str] | None = None) -> 'Config':
@@ -53,6 +57,9 @@ class Config:
             context = int(env.get('ZK_LLM_CONTEXT') or defaults.llm_context)
         except ValueError:
             raise ValueError('ZK_LLM_CONTEXT must be a whole number of tokens') from None
+        schedule = env.get('ZK_GRAPH_SCHEDULE', defaults.graph_schedule)
+        from .graph.schedule import parse
+        parse(schedule)  # a bad time stops the sidecar here, with a message
         return cls(
             vault=vault,
             token=token,
@@ -64,6 +71,7 @@ class Config:
             single_file=env.get('ZK_SINGLE_FILE') or find_single_file(),
             browser=env.get('ZK_BROWSER') or find_browser(),
             python=env.get('ZK_PYTHON', ''),
+            graph_schedule=schedule,
         )
 
     def public(self) -> dict:
@@ -78,4 +86,5 @@ class Config:
             'single_file': self.single_file,
             'browser': self.browser,
             'python': self.python,
+            'graph_schedule': self.graph_schedule,
         }

@@ -211,7 +211,14 @@ Costs on this corpus: Leiden takes 7 s. Community reports take hours. Extraction
 
 There's no "rebuild after N documents". A full rebuild is only for a new extraction prompt or model.
 
-**Open question: Leiden stability.** A small change may still reshuffle communities. Test in Phase 4: add 5 documents to this corpus, re-cluster, and count the communities that keep at least 80% of their entities.
+**Leiden stability: answered in Phase 4 (2026-10-24).** Five trials on this corpus: cluster 45 documents, add 5 at random, cluster all 50, and match by Jaccard (0.25 or more, best pairs first).
+
+| Level | Communities | Keep at least 80% of their phrases | Matched | Median Jaccard of matches |
+|---|---|---|---|---|
+| 0 | 16 to 17, then 18 | 82 to 100% | all | 0.92 to 0.97 |
+| 1 | 62 to 70, then 72 | 66 to 74% | 85 to 90% | 0.73 to 0.78 |
+
+Top-level communities hold. Level 1 moves more, so about a third of its reports get rewritten when the vault grows by 10%. Matching keeps the ids and notes either way.
 
 ### Chunking
 

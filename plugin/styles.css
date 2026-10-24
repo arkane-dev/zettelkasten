@@ -204,3 +204,108 @@ pre.zk-out {
 	gap: var(--size-4-2);
 	margin-top: var(--size-4-3);
 }
+
+/* Community graph */
+.zk-communities {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+}
+.zk-graph-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+.zk-graph-crumbs,
+.zk-graph-tools {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-1);
+	font-size: var(--font-ui-small);
+}
+.zk-graph-crumbs button[aria-current='page'] {
+	font-weight: var(--font-semibold);
+}
+.zk-graph-body {
+	flex: 1;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(12rem, 18rem);
+	min-height: 0;
+}
+.zk-graph-canvas {
+	position: relative;
+	min-height: 20rem;
+	overflow: hidden;
+}
+.zk-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+.zk-graph-list {
+	overflow: auto;
+	padding: var(--size-4-2) var(--size-4-3);
+	border-left: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-small);
+}
+.zk-graph-list h4 {
+	margin: var(--size-4-3) 0 var(--size-4-1);
+}
+.zk-graph-list ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.zk-graph-list li {
+	margin: 2px 0;
+}
+.zk-graph-item {
+	width: 100%;
+	justify-content: flex-start;
+	text-align: left;
+	height: auto;
+	white-space: normal;
+	padding: var(--size-2-1) var(--size-4-2);
+	font-size: var(--font-ui-small);
+	box-shadow: none;
+	background: transparent;
+}
+.zk-graph-item:hover,
+.zk-graph-item:focus-visible {
+	background: var(--background-modifier-hover);
+}
+.zk-graph-item.is-community::before,
+.zk-graph-item.is-source::before {
+	content: '';
+	display: inline-block;
+	width: 0.6em;
+	height: 0.6em;
+	border-radius: 50%;
+	margin-right: var(--size-4-2);
+	flex: none;
+}
+.zk-graph-item.is-community::before {
+	background: var(--color-blue);
+}
+.zk-graph-item.is-source::before {
+	background: var(--color-green);
+}
+@media (max-width: 700px) {
+	.zk-graph-body {
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr auto;
+	}
+	.zk-graph-list {
+		border-left: 0;
+		border-top: 1px solid var(--background-modifier-border);
+		max-height: 40vh;
+	}
+}

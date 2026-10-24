@@ -2,7 +2,7 @@
 
 export interface Job {
 	id: string;
-	action: 'add-file' | 'add-url' | 'recapture' | 'summarise';
+	action: 'add-file' | 'add-url' | 'recapture' | 'summarise' | 'rebuild-graph';
 	state: 'queued' | 'working' | 'done' | 'error';
 	step: string;
 	note: string | null;
@@ -25,17 +25,19 @@ const STEPS: Record<string, string> = {
 	summarising: 'writing the summary'
 };
 
+/** Known steps get a friendlier name. Others, like "writing reports (3 of 85)", show as they are. */
 export function progress(label: string, job: Job): string {
-	return `${label}: ${STEPS[job.step] ?? 'waiting'}…`;
+	return `${label}: ${STEPS[job.step] ?? (job.step || 'waiting')}…`;
 }
 
 /** What to tell the user when a job ends. */
 export function outcome(label: string, job: Job): { text: string; ok: boolean } {
 	if (job.state === 'error') return { text: `${label} failed. ${job.error}`, ok: false };
 	if (job.duplicate) return { text: `${label} is already in the vault.`, ok: true };
+	if (job.unchanged && job.action === 'rebuild-graph') return { text: `${label} are up to date. Nothing changed since the last build.`, ok: true };
 	if (job.unchanged) return { text: `${label} hasn't changed since the last capture.`, ok: true };
 	if (job.warning) return { text: `${label}: ${job.warning}`, ok: false };
-	const done = { 'add-file': 'added', 'add-url': 'saved', recapture: 'captured again', summarise: 'summarised' };
+	const done = { 'add-file': 'added', 'add-url': 'saved', recapture: 'captured again', summarise: 'summarised', 'rebuild-graph': 'rebuilt' };
 	return { text: `${label} ${done[job.action]}.`, ok: true };
 }
 

@@ -9,6 +9,8 @@ from pydantic import BaseModel
 
 from . import __version__
 from .config import Config
+from .graph.schedule import Scheduler, parse as parse_schedule
+from .graph.service import GraphService
 from .jobs import Jobs
 from .kernels.env import VaultPython
 from .kernels.pool import KernelError, KernelPool
@@ -32,6 +34,20 @@ def default_service(config: Config) -> SourceService:
     return SourceService(SourceStore(config.vault), summariser, take)
 
 
+def default_graph(config: Config) -> GraphService:
+    return GraphService(
+        config.vault,
+        lambda: openai_complete(config.llm_base_url, config.llm_model, config.llm_api_key),
+        config.llm_context,
+        config.data_dir / 'nltk',
+        model=config.llm_model,
+    )
+
+
+class RebuildIn(BaseModel):
+    force: bool = False
+
+
 class UrlIn(BaseModel):
     url: str
 
@@ -49,15 +65,31 @@ class KernelIn(BaseModel):
     kernel: str = ''
 
 
-def create_app(config: Config, service: SourceService | None = None, pool: KernelPool | None = None) -> FastAPI:
+def create_app(config: Config, service: SourceService | None = None, pool: KernelPool | None = None,
+               graph: GraphService | None = None) -> FastAPI:
     started = time.monotonic()
     sources = service or default_service(config)
     jobs = Jobs()
     kernels = pool or KernelPool(VaultPython(config.vault, config.python), config.kernel_idle_minutes)
+    communities = graph or default_graph(config)
+    rebuilding: list = []  # the current rebuild job, so a second request joins it
+
+    def rebuild(force: bool = False):
+        if rebuilding and rebuilding[0].state in ('queued', 'working'):
+            return rebuilding[0]
+        job = jobs.submit('rebuild-graph', lambda j: communities.rebuild(j, force))
+        rebuilding[:] = [job]
+        return job
+
+    schedule = Scheduler(parse_schedule(config.graph_schedule),
+                         built=lambda: communities.store.state().get('built', ''),
+                         changed=communities.changed, run=rebuild)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
+        schedule.start()
         yield
+        schedule.stop()
         kernels.close()
 
     def auth(authorization: str = Header('')):
@@ -153,6 +185,28 @@ def create_app(config: Config, service: SourceService | None = None, pool: Kerne
             except KernelError as e:
                 raise HTTPException(400, str(e)) from None
         return route
+
+    @app.get('/graph/status')
+    def graph_status():
+        job = rebuilding[0].public() if rebuilding else None
+        return {**communities.status(), 'schedule': config.graph_schedule, 'job': job}
+
+    @app.post('/graph/rebuild', status_code=202)
+    def graph_rebuild(body: RebuildIn):
+        return rebuild(body.force).public()
+
+    @app.get('/graph')
+    def graph_view():
+        return communities.view()
+
+    @app.get('/graph/renames')
+    def graph_renames():
+        return communities.renames()
+
+    @app.post('/graph/notes')
+    def graph_notes():
+        communities.refresh_notes()
+        return {'ok': True}
 
     app.post('/kernels/interrupt')(on_kernels(kernels.interrupt))
     app.post('/kernels/restart')(on_kernels(kernels.restart))

@@ -15,9 +15,13 @@ dependencies = [
     "trafilatura>=2.3",
     "markitdown[docx,xlsx,pptx]>=0.1.8",
     "jupyter_client>=8.6",
+    "textblob>=0.19",
+    "graspologic-native>=1.2",
 ]
 
 [project.optional-dependencies]
+# Typed key ideas for communities. Pulls in PyTorch, several GB.
+entities = ["gliner>=0.2.21"]
 dev = ["pytest>=8", "httpx2>=2.14", "ipykernel>=6.29", "matplotlib>=3.9"]
 
 [project.scripts]

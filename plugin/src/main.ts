@@ -7,6 +7,7 @@ import { AddSourceModal, Ingest } from './ingest';
 import { isSourceFile } from './jobs';
 import { CodeRunner } from './codeblocks';
 import { NOTEBOOK_VIEW, NotebookView, createNotebook } from './notebook';
+import { COMMUNITY_VIEW, CommunityView, openCommunityView, rebuildCommunities } from './communities';
 
 const LABELS: Record<SidecarState, string> = {
 	stopped: 'ZK: stopped',
@@ -51,7 +52,10 @@ export default class Zettelkasten extends Plugin {
 			},
 			onChange: (state) => {
 				this.showState(state);
-				if (state === 'ready') this.code?.refreshKernels();
+				if (state === 'ready') {
+					this.code?.refreshKernels();
+					this.app.workspace.getLeavesOfType(COMMUNITY_VIEW).forEach((l) => (l.view as CommunityView).reload?.());
+				}
 			}
 		});
 		this.showState('stopped');
@@ -123,6 +127,16 @@ export default class Zettelkasten extends Plugin {
 		onNote('clear-code-output', 'Clear code output in this note', (f) => this.code.clearAll(f.path));
 		this.registerEvent(this.app.vault.on('delete', (f) => this.code.shutdown(f.path)));
 		this.registerEvent(this.app.vault.on('rename', (_f, old) => this.code.shutdown(old)));
+
+		this.registerView(COMMUNITY_VIEW, (leaf) => new CommunityView(leaf, this));
+		this.addRibbonIcon('network', 'Open the community graph', () => openCommunityView(this));
+		this.addCommand({ id: 'open-communities', name: 'Open the community graph', callback: () => openCommunityView(this) });
+		this.addCommand({ id: 'rebuild-communities', name: 'Rebuild communities', callback: () => rebuildCommunities(this) });
+		this.addCommand({
+			id: 'rebuild-communities-all',
+			name: 'Rebuild communities and rewrite every report',
+			callback: () => rebuildCommunities(this, true)
+		});
 
 		this.app.workspace.onLayoutReady(() => this.startSidecar(false));
 	}
@@ -204,6 +218,12 @@ class ZkSettingTab extends PluginSettingTab {
 			.setName('Python for code')
 			.setDesc('A Python with ipykernel. Leave empty to use this vault\'s own, made in .zk/python on the first run.')
 			.addText((t) => this.bind(t, 'pythonPath', 'vault Python'));
+
+		new Setting(containerEl).setName('Communities').setHeading();
+		new Setting(containerEl)
+			.setName('Rebuild daily at')
+			.setDesc('HH:MM. Runs only if the vault changed, and only while Obsidian is open. Leave empty to turn it off.')
+			.addText((t) => this.bind(t, 'graphSchedule', 'off'));
 
 		new Setting(containerEl).setName('Models').setHeading();
 		new Setting(containerEl)
