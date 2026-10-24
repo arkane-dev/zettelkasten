@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Create a new Zettelkasten vault with the plugin installed.
+# Create a new Zettelkasten vault with the plugin and the NEONDECK theme installed.
 #
 #   scripts/new-vault.sh <path> [--link]
 #
-#   --link  symlink the plugin build instead of copying it, so a rebuild shows up
+#   --link  symlink the plugin and theme builds instead of copying them, so a rebuild shows up
 #           after "Reload app without saving" in Obsidian. Use it for development.
 #
 # The vault points the plugin at this repo's sidecar (.venv/bin/zk-sidecar).
@@ -28,10 +28,13 @@ mkdir -p "$vault"
 vault=$(cd "$vault" && pwd)
 mkdir -p "$vault/Sources" "$vault/Communities" "$vault/.zk/outputs" "$vault/.obsidian/plugins/zettelkasten"
 
+put() { if [[ $link == --link ]]; then ln -s "$1" "$2"; else cp "$1" "$2"; fi; }
 dest=$vault/.obsidian/plugins/zettelkasten
-for f in main.js manifest.json styles.css; do
-	if [[ $link == --link ]]; then ln -s "$plugin/$f" "$dest/$f"; else cp "$plugin/$f" "$dest/$f"; fi
-done
+for f in main.js manifest.json styles.css; do put "$plugin/$f" "$dest/$f"; done
+theme=$vault/.obsidian/themes/NEONDECK
+mkdir -p "$theme"
+for f in theme.css manifest.json; do put "$repo/theme/$f" "$theme/$f"; done
+echo '{"cssTheme": "NEONDECK", "theme": "obsidian"}' > "$vault/.obsidian/appearance.json"
 printf '{\n\t"sidecarCommand": "%s"\n}\n' "$sidecar" > "$dest/data.json"
 echo '["zettelkasten"]' > "$vault/.obsidian/community-plugins.json"
 
@@ -40,9 +43,10 @@ cat > "$vault/Start here.md" <<'EOF'
 
 This vault runs the Zettelkasten plugin.
 
-- **Sources/** holds one folder per source: the original file, its text and a note.
-- **Communities/** holds the GraphRAG community notes. They're generated, but your notes on them are kept.
-- **.zk/** holds the plugin's caches.
+- **Sources/** holds one folder per source: the original file, its text and a note. Add one with the ribbon's book icon.
+- **Communities/** holds the community notes. "Rebuild communities" writes them. Your `## Notes` in them are kept.
+- **Code:** add `run` after the language in a code block, like ```` ```python run ````, to run it.
+- **.zk/** holds the plugin's caches and this vault's Python.
 
 The status bar shows the sidecar. Click it to start the sidecar again if it stopped.
 EOF

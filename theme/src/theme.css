@@ -1,0 +1,522 @@
+/*
+ * NEONDECK for Obsidian.
+ * Night City at 3 a.m., seen through a cyberdeck. Blue-black surfaces, neon used sparingly,
+ * cut corners, 1px lines, technical type. Values are NEONDECK's tokens (sharable_assets/neondeck).
+ * Dark only: light mode gets the same palette.
+ *
+ * build.mjs inlines the fonts, checks contrast, and writes ../theme.css.
+ */
+
+/* @fonts: build.mjs replaces this line with the embedded @font-face rules */
+
+body.theme-dark,
+body.theme-light {
+	color-scheme: dark;
+
+	/* ── NEONDECK tokens ── */
+	--nd-void: #03040c;
+	--nd-bg: #070818;
+	--nd-surface-1: #0c0f26;
+	--nd-surface-2: #12163a;
+	--nd-surface-3: #1b1f4a;
+	--nd-line: #262a5c;
+	--nd-line-strong: #5659a4;
+	--nd-text: #ecebff;
+	--nd-text-dim: #a49fd9;
+	--nd-text-mute: #8885b9;
+	--nd-text-on-neon: #070818;
+	--nd-magenta: #ff2bd6;
+	--nd-pink: #ff5fb4;
+	--nd-cyan: #22f2f7;
+	--nd-blue: #6077ff;
+	--nd-violet: #a66bff;
+	--nd-yellow: #f5ec58;
+	--nd-red: #ff3b52;
+	--nd-jade: #3ff0b8;
+	--nd-gold: #f6bd6a;
+	--nd-street-coral: #ef6352;
+
+	--nd-font-display: 'Chakra Petch', 'Rajdhani', 'Noto Sans SC', system-ui, sans-serif;
+	--nd-font-ui: 'Rajdhani', 'Chakra Petch', 'Noto Sans SC', system-ui, sans-serif;
+	--nd-font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, 'Noto Sans SC', monospace;
+	--nd-cut-sm: 8px;
+	--nd-cut-md: 14px;
+	--nd-glow: 0 0 4px var(--nd-magenta), 0 0 16px color-mix(in srgb, var(--nd-magenta) 55%, transparent);
+
+	/* ── Obsidian: colours ── */
+	--accent-h: 312;
+	--accent-s: 100%;
+	--accent-l: 58%;
+	--color-accent: var(--nd-magenta);
+	--color-accent-1: var(--nd-pink);
+	--color-accent-2: var(--nd-pink);
+
+	--color-red-rgb: 255, 59, 82;
+	--color-red: var(--nd-red);
+	--color-orange-rgb: 239, 99, 82;
+	--color-orange: var(--nd-street-coral);
+	--color-yellow-rgb: 245, 236, 88;
+	--color-yellow: var(--nd-yellow);
+	--color-green-rgb: 63, 240, 184;
+	--color-green: var(--nd-jade);
+	--color-cyan-rgb: 34, 242, 247;
+	--color-cyan: var(--nd-cyan);
+	--color-blue-rgb: 96, 119, 255;
+	--color-blue: var(--nd-blue);
+	--color-purple-rgb: 166, 107, 255;
+	--color-purple: var(--nd-violet);
+	--color-pink-rgb: 255, 95, 180;
+	--color-pink: var(--nd-pink);
+
+	--background-primary: var(--nd-bg);
+	--background-primary-alt: var(--nd-surface-1);
+	--background-secondary: var(--nd-surface-1);
+	--background-secondary-alt: var(--nd-surface-2);
+	--background-modifier-hover: var(--nd-surface-2);
+	--background-modifier-active-hover: color-mix(in srgb, var(--nd-magenta) 14%, transparent);
+	--background-modifier-border: var(--nd-line);
+	--background-modifier-border-hover: var(--nd-line-strong);
+	--background-modifier-border-focus: var(--nd-cyan);
+	--background-modifier-form-field: var(--nd-void);
+	--background-modifier-form-field-highlighted: var(--nd-void);
+	--background-modifier-error: var(--nd-red);
+	--background-modifier-error-hover: var(--nd-red);
+	--background-modifier-success: var(--nd-jade);
+	--background-modifier-message: var(--nd-surface-3);
+	--background-modifier-box-shadow: transparent;
+	--background-modifier-cover: color-mix(in srgb, var(--nd-void) 80%, transparent);
+
+	--text-normal: var(--nd-text);
+	--text-muted: var(--nd-text-dim);
+	--text-faint: var(--nd-text-mute);
+	--text-on-accent: var(--nd-text-on-neon);
+	--text-on-accent-inverted: var(--nd-text-on-neon);
+	--text-accent: var(--nd-magenta);
+	--text-accent-hover: var(--nd-pink);
+	--text-error: var(--nd-red);
+	--text-warning: var(--nd-yellow);
+	--text-success: var(--nd-jade);
+	--text-selection: color-mix(in srgb, var(--nd-magenta) 30%, transparent);
+	--text-highlight-bg: color-mix(in srgb, var(--nd-yellow) 24%, transparent);
+	--text-highlight-bg-active: color-mix(in srgb, var(--nd-yellow) 40%, transparent);
+
+	--interactive-normal: var(--nd-surface-1);
+	--interactive-hover: var(--nd-surface-3);
+	--interactive-accent: var(--nd-magenta);
+	--interactive-accent-hover: var(--nd-pink);
+	--interactive-accent-hsl: 312, 100%, 58%;
+
+	--icon-color: var(--nd-text-dim);
+	--icon-color-hover: var(--nd-text);
+	--icon-color-active: var(--nd-magenta);
+	--icon-color-focused: var(--nd-text);
+
+	/* ── Obsidian: type ── */
+	--font-text-theme: var(--nd-font-display);
+	--font-interface-theme: var(--nd-font-ui);
+	--font-monospace-theme: var(--nd-font-mono);
+	--font-ui-smaller: 12px;
+	--font-ui-small: 13px;
+	--font-ui-medium: 15px;
+	--line-height-normal: 1.55;
+	--heading-formatting: var(--nd-text-mute);
+	--h1-font: var(--nd-font-display);
+	--h2-font: var(--nd-font-display);
+	--h3-font: var(--nd-font-display);
+	--h4-font: var(--nd-font-ui);
+	--h5-font: var(--nd-font-ui);
+	--h6-font: var(--nd-font-ui);
+	--h1-weight: 700;
+	--h2-weight: 700;
+	--h3-weight: 600;
+	--h4-weight: 700;
+	--h5-weight: 700;
+	--h6-weight: 700;
+	--h1-line-height: 1.05;
+	--h2-line-height: 1.1;
+	--h3-line-height: 1.2;
+	--h1-color: var(--nd-text);
+	--h2-color: var(--nd-text);
+	--h3-color: var(--nd-cyan);
+	--h4-color: var(--nd-text-dim);
+	--h5-color: var(--nd-text-dim);
+	--h6-color: var(--nd-text-mute);
+	--inline-title-font: var(--nd-font-display);
+	--inline-title-weight: 700;
+	--inline-title-color: var(--nd-text);
+	--bold-color: var(--nd-text);
+	--italic-color: var(--nd-text);
+	--blockquote-border-color: var(--nd-violet);
+	--blockquote-color: var(--nd-text-dim);
+	--hr-color: var(--nd-line);
+
+	/* Links: cyan is the link colour. Unresolved links stay legible, dashed. */
+	--link-color: var(--nd-cyan);
+	--link-color-hover: var(--nd-text);
+	--link-unresolved-color: var(--nd-text-dim);
+	--link-unresolved-opacity: 1;
+	--link-unresolved-decoration-color: var(--nd-line-strong);
+	--link-external-color: var(--nd-cyan);
+	--link-external-color-hover: var(--nd-text);
+
+	/* ── Shape: radius 0 everywhere. Corners are cut where it's safe to clip. ── */
+	--radius-s: 0;
+	--radius-m: 0;
+	--radius-l: 0;
+	--radius-xl: 0;
+	--button-radius: 0;
+	--input-radius: 0;
+	--checkbox-radius: 0;
+	--toggle-radius: 0;
+	--toggle-thumb-radius: 0;
+	--slider-thumb-radius: 0;
+	--tab-radius: 0;
+	--tab-radius-active: 0;
+	--callout-radius: 0;
+	--code-radius: 0;
+	--embed-border-radius: 0;
+	--image-radius: 0;
+	--modal-radius: 0;
+	--tag-radius: 0;
+	--clickable-icon-radius: 0;
+	--input-shadow: inset 0 0 0 1px var(--nd-line-strong);
+	--input-shadow-hover: inset 0 0 0 1px var(--nd-text-dim);
+	--shadow-s: none;
+	--shadow-l: none;
+	--border-width: 1px;
+
+	/* ── Code ── every colour ≥4.5:1 on --nd-void (build.mjs checks) */
+	--code-background: var(--nd-void);
+	--code-normal: var(--nd-text);
+	--code-comment: var(--nd-text-mute);
+	--code-function: var(--nd-cyan);
+	--code-important: var(--nd-red);
+	--code-keyword: var(--nd-magenta);
+	--code-operator: var(--nd-text-dim);
+	--code-property: var(--nd-gold);
+	--code-punctuation: var(--nd-text-dim);
+	--code-string: var(--nd-jade);
+	--code-tag: var(--nd-pink);
+	--code-value: var(--nd-yellow);
+
+	/* ── Tags, callouts, checkboxes ── */
+	--tag-color: var(--nd-cyan);
+	--tag-color-hover: var(--nd-text);
+	--tag-background: color-mix(in srgb, var(--nd-cyan) 12%, transparent);
+	--tag-background-hover: color-mix(in srgb, var(--nd-cyan) 20%, transparent);
+	--tag-border-width: 1px;
+	--tag-border-color: color-mix(in srgb, var(--nd-cyan) 40%, transparent);
+	--checkbox-color: var(--nd-magenta);
+	--checkbox-color-hover: var(--nd-pink);
+	--checkbox-border-color: var(--nd-line-strong);
+	--checkbox-marker-color: var(--nd-text-on-neon);
+	--checklist-done-color: var(--nd-text-mute);
+	--callout-padding: 12px 16px;
+	--callout-border-width: 0 0 0 2px;
+	--callout-title-weight: 700;
+
+	/* ── Workspace chrome ── */
+	--titlebar-background: var(--nd-void);
+	--titlebar-background-focused: var(--nd-void);
+	--tab-container-background: var(--nd-void);
+	--tab-background-active: var(--nd-bg);
+	--tab-text-color: var(--nd-text-mute);
+	--tab-text-color-active: var(--nd-text);
+	--tab-text-color-focused: var(--nd-text-dim);
+	--tab-text-color-focused-active: var(--nd-text);
+	--tab-text-color-focused-active-current: var(--nd-text);
+	--tab-outline-color: var(--nd-line);
+	--tab-divider-color: var(--nd-line);
+	--ribbon-background: var(--nd-void);
+	--ribbon-background-collapsed: var(--nd-void);
+	--status-bar-background: var(--nd-void);
+	--status-bar-border-color: var(--nd-line);
+	--status-bar-text-color: var(--nd-text-dim);
+	--status-bar-font-size: 12px;
+	--divider-color: var(--nd-line);
+	--divider-color-hover: var(--nd-line-strong);
+	--nav-item-color: var(--nd-text-dim);
+	--nav-item-color-hover: var(--nd-text);
+	--nav-item-color-active: var(--nd-text);
+	--nav-item-background-hover: var(--nd-surface-2);
+	--nav-item-background-active: var(--nd-surface-3);
+	--nav-item-color-selected: var(--nd-text);
+	--nav-item-background-selected: color-mix(in srgb, var(--nd-magenta) 14%, transparent);
+	--nav-indentation-guide-color: var(--nd-line);
+	--scrollbar-bg: transparent;
+	--scrollbar-thumb-bg: var(--nd-line);
+	--scrollbar-active-thumb-bg: var(--nd-line-strong);
+	--table-border-color: var(--nd-line);
+	--table-header-background: var(--nd-surface-1);
+	--table-header-color: var(--nd-text-dim);
+	--table-row-background-hover: color-mix(in srgb, var(--nd-magenta) 8%, transparent);
+	--table-header-font: var(--nd-font-ui);
+	--modal-background: var(--nd-surface-1);
+	--modal-border-color: var(--nd-line-strong);
+	--prompt-border-color: var(--nd-line-strong);
+	--menu-background: var(--nd-surface-3);
+	--menu-border-color: var(--nd-line-strong);
+	--menu-shadow: none;
+	--pill-color: var(--nd-text-dim);
+	--pill-border-color: var(--nd-line-strong);
+	--metadata-label-text-color: var(--nd-text-mute);
+	--metadata-label-font: var(--nd-font-mono);
+	--metadata-label-font-size: 12px;
+	--metadata-input-font: var(--nd-font-mono);
+	--metadata-input-font-size: 13px;
+	--metadata-border-color: var(--nd-line);
+
+	/* ── Graph view ── */
+	--graph-line: var(--nd-line-strong);
+	--graph-node: var(--nd-text-dim);
+	--graph-node-unresolved: var(--nd-text-mute);
+	--graph-node-focused: var(--nd-magenta);
+	--graph-node-tag: var(--nd-cyan);
+	--graph-node-attachment: var(--nd-jade);
+	--graph-text: var(--nd-text);
+}
+
+/* The workspace sits on the blue-black with a faint violet haze, like the NEONDECK app shell. */
+body.theme-dark .workspace,
+body.theme-light .workspace {
+	background: radial-gradient(ellipse at 85% -10%, color-mix(in srgb, var(--nd-violet) 10%, transparent), transparent 55%),
+		var(--nd-void);
+}
+
+/* ── Headings: technical, uppercase. ── */
+.markdown-rendered h1,
+.markdown-rendered h2,
+.HyperMD-header-1,
+.HyperMD-header-2,
+.inline-title {
+	text-transform: uppercase;
+	letter-spacing: 0.01em;
+}
+.markdown-rendered h4,
+.markdown-rendered h5,
+.markdown-rendered h6,
+.HyperMD-header-4,
+.HyperMD-header-5,
+.HyperMD-header-6 {
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+}
+.markdown-rendered h2 {
+	padding-bottom: 0.25em;
+	border-bottom: 1px solid var(--nd-line);
+}
+
+/* ── Labels: Rajdhani uppercase with tracking, as on every NEONDECK control. ── */
+button,
+.mod-cta,
+.setting-item-name,
+.vertical-tab-nav-item,
+.nav-header,
+.tree-item-self.nav-folder-title,
+.workspace-tab-header-inner-title,
+.view-header-title,
+.metadata-properties-heading {
+	font-family: var(--nd-font-ui);
+}
+button,
+.mod-cta,
+.vertical-tab-header-group-title,
+.metadata-properties-heading,
+.markdown-rendered th {
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+}
+/* Tab titles are note names, not labels: they keep their case, so they don't truncate early. */
+.workspace-tab-header-inner-title {
+	font-weight: 600;
+	font-size: 14px;
+	letter-spacing: 0.02em;
+}
+
+/* ── Numbers and meta in mono ── */
+.status-bar,
+.metadata-property-key,
+.nav-file-tag,
+.workspace-leaf-content[data-type='file-explorer'] .tree-item-flair,
+.markdown-rendered td[style*='right'],
+.suggestion-note {
+	font-family: var(--nd-font-mono);
+}
+.status-bar {
+	font-size: 12px;
+	border-top: 1px solid var(--nd-line);
+}
+
+/* ── The active tab: the one lit element in the tab bar. ── */
+.workspace-tab-header.is-active {
+	box-shadow: inset 0 -2px 0 var(--nd-magenta);
+}
+.workspace-leaf.mod-active .workspace-tab-header.is-active,
+.mod-root .workspace-tab-header.is-active.mod-active {
+	box-shadow: inset 0 -2px 0 var(--nd-magenta), 0 2px 12px -6px var(--nd-magenta);
+}
+
+/* ── Buttons: flat, hairline, the primary one filled neon. No gradients, no shadows. ── */
+button:not(.clickable-icon) {
+	box-shadow: inset 0 0 0 1px var(--nd-line-strong);
+	background: var(--nd-surface-1); /* as NEONDECK's Button: the edge needs 3:1 against the fill */
+	color: var(--nd-text);
+	font-weight: 600;
+}
+button:not(.clickable-icon):hover {
+	background: var(--nd-surface-3);
+	box-shadow: inset 0 0 0 1px var(--nd-text-dim);
+}
+button.mod-cta {
+	background: var(--nd-magenta);
+	color: var(--nd-text-on-neon);
+	box-shadow: none;
+}
+button.mod-cta:hover {
+	background: var(--nd-pink);
+}
+button.mod-warning {
+	background: var(--nd-red);
+	color: var(--nd-text-on-neon);
+}
+
+/* ── Focus: a 2px cyan ring, offset so it's judged against the page. Never removed. ── */
+:focus-visible,
+button:focus-visible,
+.clickable-icon:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+	outline: 2px solid var(--nd-cyan);
+	outline-offset: 2px;
+	box-shadow: none;
+}
+
+/* ── Cut corners on the big frames. Panels cut top-left and bottom-right. ── */
+.modal,
+.prompt,
+.callout,
+.menu {
+	clip-path: polygon(var(--nd-cut-md) 0, 100% 0, 100% calc(100% - var(--nd-cut-md)), calc(100% - var(--nd-cut-md)) 100%, 0 100%, 0 var(--nd-cut-md));
+}
+.menu,
+.prompt {
+	clip-path: polygon(var(--nd-cut-sm) 0, 100% 0, 100% calc(100% - var(--nd-cut-sm)), calc(100% - var(--nd-cut-sm)) 100%, 0 100%, 0 var(--nd-cut-sm));
+}
+.modal,
+.prompt,
+.menu {
+	border: 1px solid var(--nd-line-strong);
+}
+/* clip-path cuts the border off at the corners. Draw the diagonal edge back in. */
+.modal::before,
+.modal::after,
+.prompt::before,
+.prompt::after,
+.menu::before,
+.menu::after {
+	content: '';
+	position: absolute;
+	width: var(--zk-cut);
+	height: var(--zk-cut);
+	pointer-events: none;
+	z-index: 1;
+	background: linear-gradient(to bottom right, transparent calc(50% - 0.75px), var(--nd-line-strong) calc(50% - 0.75px),
+		var(--nd-line-strong) calc(50% + 0.75px), transparent calc(50% + 0.75px));
+}
+.modal::before,
+.prompt::before,
+.menu::before {
+	top: -1px;
+	left: -1px;
+}
+.modal::after,
+.prompt::after,
+.menu::after {
+	right: -1px;
+	bottom: -1px;
+}
+.modal {
+	--zk-cut: var(--nd-cut-md);
+}
+.prompt,
+.menu {
+	--zk-cut: var(--nd-cut-sm);
+}
+
+/* ── Code: void wells with the 2px accent rule on the left. ── */
+.markdown-rendered pre,
+.HyperMD-codeblock.cm-line,
+.markdown-source-view.mod-cm6 .cm-line.HyperMD-codeblock {
+	background-color: var(--nd-void);
+}
+.markdown-rendered pre {
+	border: 1px solid var(--nd-line);
+	border-left: 2px solid var(--nd-violet);
+}
+.markdown-rendered :not(pre) > code,
+.cm-s-obsidian span.cm-inline-code {
+	color: var(--nd-gold);
+	background-color: var(--nd-void);
+}
+
+/* ── Callouts: hairline frame, left rule in the callout's colour. ── */
+.callout {
+	background-color: color-mix(in srgb, rgb(var(--callout-color)) 8%, var(--nd-surface-1));
+	border-left-color: rgb(var(--callout-color));
+}
+.callout-title {
+	font-family: var(--nd-font-ui);
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+}
+
+/* ── Checkboxes and toggles: square. ── */
+input[type='checkbox'] {
+	border-radius: 0;
+}
+.checkbox-container,
+.checkbox-container::after {
+	border-radius: 0;
+}
+.checkbox-container.is-enabled {
+	background-color: var(--nd-magenta);
+}
+
+/* ── Horizontal rules: a hairline with a mono marker. ── */
+.markdown-rendered hr {
+	border-top: 1px solid var(--nd-line);
+}
+
+/* ── Tables ── */
+.markdown-rendered table {
+	border-collapse: collapse;
+}
+.markdown-rendered th {
+	font-weight: 700;
+	font-size: 12px;
+}
+
+/* ── prefers-contrast: more — no glow, brighter lines and secondary text. ── */
+@media (prefers-contrast: more) {
+	body.theme-dark,
+	body.theme-light {
+		/* NEONDECK's own high-contrast values */
+		--nd-line: #4a4f9c;
+		--nd-line-strong: #7a7dc8;
+		--nd-text-dim: #c9c5f2;
+		--nd-text-mute: #aaa6dc;
+	}
+	.workspace-tab-header.is-active,
+	.workspace-leaf.mod-active .workspace-tab-header.is-active {
+		box-shadow: inset 0 -2px 0 var(--nd-magenta);
+	}
+}
+
+/* ── Motion: fast and mechanical, and none at all if asked. ── */
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		animation: none !important;
+	}
+}

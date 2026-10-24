@@ -5,6 +5,7 @@ PDFs with no text layer (printed to PDF as vector shapes): RapidOCR on each page
 Web pages: trafilatura keeps the article and drops menus, shop links and footers.
 Office files: MarkItDown.
 """
+import os
 import glob, json, re, sys, time
 from pathlib import Path
 from markitdown import MarkItDown
@@ -28,10 +29,11 @@ def pdf_text(path):
     return '\n\n'.join(pages), f'pymupdf+ocr:{ocr_pages}' if ocr_pages else 'pymupdf'
 
 
-ROOT = Path('/media/Books')
+ROOT = Path(os.environ.get('SPIKE_LIBRARY', 'library'))  # where the source files live
 OUT = Path('corpus'); OUT.mkdir(exist_ok=True)
 md = MarkItDown()
 rows = []
+# corpus.txt lists the spike's source files. It's local only, not in the repo.
 for line in Path('corpus.txt').read_text().splitlines():
     if not line.strip() or line.startswith('#'):
         continue

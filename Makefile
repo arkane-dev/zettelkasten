@@ -1,7 +1,7 @@
 VENV := $(CURDIR)/.venv
 export PATH := $(VENV)/bin:$(PATH)
 
-.PHONY: setup plugin dev test dev-vault obsidian
+.PHONY: setup plugin theme dev test dev-vault obsidian
 
 setup:          ## venv with node, SingleFile, the sidecar (editable, with GLiNER) and plugin packages
 	test -d $(VENV) || uv venv -q --python 3.12 $(VENV)
@@ -12,6 +12,9 @@ setup:          ## venv with node, SingleFile, the sidecar (editable, with GLiNE
 
 plugin:         ## type-check and build plugin/main.js
 	cd plugin && npm run build
+
+theme:          ## rebuild theme/theme.css: embed fonts, check tokens and contrast
+	cd theme && npm ci --silent && npm run build
 
 dev:            ## rebuild the plugin on every change
 	cd plugin && npm run dev

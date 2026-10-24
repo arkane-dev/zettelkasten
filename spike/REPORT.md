@@ -4,7 +4,7 @@ Started 2026-10-09. Does the plan hold up? Three questions: GraphRAG on a local 
 
 ## Corpus
 
-50 documents from `/media/Books` (list in `corpus.txt`), about 244k words, 376 chunks of 1,200 tokens.
+50 documents from a personal library: 19 AI and robotics papers, 8 books on making props and cosplay, and 23 recipes (the file list isn't published), about 244k words, 376 chunks of 1,200 tokens.
 
 - 19 AI and robotics papers.
 - 8 props and cosplay books.

@@ -111,3 +111,17 @@ def test_recapture_and_summarise_need_a_source(api: TestClient):
 
 def test_unknown_job(api: TestClient):
     assert api.get('/jobs/nope', headers=bearer()).status_code == 404
+
+
+def test_models_reports_an_unreachable_api(tmp_path: Path):
+    app = create_app(Config(vault=tmp_path, token=TOKEN, llm_base_url='http://127.0.0.1:9/v1', graph_schedule='off'))
+    body = TestClient(app).get('/models', headers=bearer()).json()
+    assert body['ok'] is False and 'did not answer' in body['error'] and body['found'] is False
+
+
+def test_models_lists_what_the_api_has(tmp_path: Path, monkeypatch):
+    import zk_sidecar.app as app_mod
+    monkeypatch.setattr(app_mod, 'list_models', lambda url, key: ['gemma3:27b', 'qwen3:30b'])
+    app = create_app(Config(vault=tmp_path, token=TOKEN, llm_model='qwen3:30b', graph_schedule='off'))
+    body = TestClient(app).get('/models', headers=bearer()).json()
+    assert body == {'ok': True, 'error': '', 'models': ['gemma3:27b', 'qwen3:30b'], 'model': 'qwen3:30b', 'found': True}

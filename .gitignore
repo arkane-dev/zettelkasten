@@ -32,3 +32,5 @@ spike/rag-hybrid/output/
 spike/rag-hybrid/cache/
 spike/rag-hybrid/logs/
 spike/rag-hybrid/gliner/
+spike/corpus.txt
+spike/rag*/.env

@@ -88,6 +88,14 @@ class Summariser:
         return THINK.sub('', self.complete(system, user)).strip()
 
 
+def list_models(base_url: str, api_key: str) -> list[str]:
+    """Model names the API offers. Ollama lists what's installed."""
+    from openai import OpenAI
+
+    client = OpenAI(base_url=base_url, api_key=api_key or 'none', timeout=10, max_retries=0)
+    return sorted(m.id for m in client.models.list())
+
+
 def openai_complete(base_url: str, model: str, api_key: str) -> Complete:
     from openai import OpenAI
 

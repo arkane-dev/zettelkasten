@@ -18,7 +18,7 @@ from .sources.capture import capture, check_url
 from .sources.convert import KINDS, kind_of
 from .sources.service import SourceService
 from .sources.store import SourceStore
-from .summarise import Summariser, openai_complete
+from .summarise import Summariser, list_models, openai_complete
 
 MAX_UPLOAD = 500 * 1024 * 1024
 
@@ -185,6 +185,17 @@ def create_app(config: Config, service: SourceService | None = None, pool: Kerne
             except KernelError as e:
                 raise HTTPException(400, str(e)) from None
         return route
+
+    @app.get('/models')
+    def models():
+        """What the model API offers, so the settings can say if the chosen model is missing."""
+        try:
+            names = list_models(config.llm_base_url, config.llm_api_key)
+        except Exception as e:  # noqa: BLE001  any failure means the API isn't reachable
+            return {'ok': False, 'error': f'{config.llm_base_url} did not answer: {e}', 'models': [],
+                    'model': config.llm_model, 'found': False}
+        return {'ok': True, 'error': '', 'models': names, 'model': config.llm_model,
+                'found': config.llm_model in names}
 
     @app.get('/graph/status')
     def graph_status():

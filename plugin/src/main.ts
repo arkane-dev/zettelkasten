@@ -68,7 +68,7 @@ export default class Zettelkasten extends Plugin {
 		registerReaders(this);
 		this.ingest = new Ingest(this);
 		const addSource = () => new AddSourceModal(this.app, this.ingest).open();
-		this.addRibbonIcon('book-plus', 'Add a source', addSource);
+		this.ribbon(this.addRibbonIcon('book-plus', 'Add a source', addSource));
 		this.addCommand({ id: 'add-source', name: 'Add a source', callback: addSource });
 		this.addCommand({
 			id: 'recapture',
@@ -129,7 +129,7 @@ export default class Zettelkasten extends Plugin {
 		this.registerEvent(this.app.vault.on('rename', (_f, old) => this.code.shutdown(old)));
 
 		this.registerView(COMMUNITY_VIEW, (leaf) => new CommunityView(leaf, this));
-		this.addRibbonIcon('network', 'Open the community graph', () => openCommunityView(this));
+		this.ribbon(this.addRibbonIcon('network', 'Open the community graph', () => openCommunityView(this)));
 		this.addCommand({ id: 'open-communities', name: 'Open the community graph', callback: () => openCommunityView(this) });
 		this.addCommand({ id: 'rebuild-communities', name: 'Rebuild communities', callback: () => rebuildCommunities(this) });
 		this.addCommand({
@@ -139,6 +139,11 @@ export default class Zettelkasten extends Plugin {
 		});
 
 		this.app.workspace.onLayoutReady(() => this.startSidecar(false));
+	}
+
+	/** Ribbon icons come as plain divs with a label. A role makes the label valid for screen readers. */
+	private ribbon(el: HTMLElement) {
+		el.setAttr('role', 'button');
 	}
 
 	onunload() {
@@ -230,9 +235,10 @@ class ZkSettingTab extends PluginSettingTab {
 			.setName('API base URL')
 			.setDesc('Any OpenAI-compatible API. Ollama runs at http://127.0.0.1:11434/v1.')
 			.addText((t) => this.bind(t, 'llmBaseUrl', DEFAULT_SETTINGS.llmBaseUrl));
-		new Setting(containerEl)
+		const model = new Setting(containerEl)
 			.setName('Model')
 			.addText((t) => this.bind(t, 'llmModel', DEFAULT_SETTINGS.llmModel));
+		this.describeModels(model);
 		new Setting(containerEl)
 			.setName('API key')
 			.setDesc('Leave empty for Ollama. Stored as plain text in this vault\'s plugin data.')
@@ -250,6 +256,25 @@ class ZkSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Embedding model')
 			.addText((t) => this.bind(t, 'embedModel', DEFAULT_SETTINGS.embedModel));
+	}
+
+	/** Say which models the API has, and warn if the chosen one isn't there. */
+	private async describeModels(setting: Setting) {
+		setting.setDesc('Checking the model API…');
+		try {
+			const r = await this.plugin.sidecar.get<{ ok: boolean; error: string; models: string[]; model: string; found: boolean }>('/models');
+			const desc = createFragment((f) => {
+				if (!r.ok) {
+					f.createSpan({ cls: 'zk-error', text: r.error });
+					return;
+				}
+				if (!r.found) f.createSpan({ cls: 'zk-error', text: `${r.model} is not installed. ` });
+				f.appendText(r.models.length ? `Available: ${r.models.join(', ')}.` : 'The API lists no models.');
+			});
+			setting.setDesc(desc);
+		} catch (e) {
+			setting.setDesc(`Start the sidecar to check the models. ${(e as Error).message}`);
+		}
 	}
 
 	/** Restart the sidecar once the settings close, if anything changed. */
