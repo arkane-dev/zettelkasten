@@ -5,25 +5,14 @@ import { FileView, MarkdownPostProcessorContext, MarkdownRenderChild, Plugin, TF
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import { originalFrom, snapshotDoc } from './notes';
+import { cleanInto } from './html';
 
 type Render = (plugin: Plugin, el: HTMLElement, file: TFile) => Promise<void>;
-
-/** Drop anything active. mammoth and SheetJS make plain HTML, but files come from anywhere. */
-function cleanInto(el: HTMLElement, html: string, selector = 'body > *') {
-	const doc = new DOMParser().parseFromString(html, 'text/html');
-	doc.querySelectorAll('script, iframe, object, embed, link, meta, style').forEach((n) => n.remove());
-	doc.querySelectorAll('*').forEach((n) => {
-		for (const a of Array.from(n.attributes)) {
-			if (a.name.startsWith('on') || /^\s*javascript:/i.test(a.value)) n.removeAttribute(a.name);
-		}
-	});
-	el.append(...Array.from(doc.querySelectorAll(selector)));
-}
 
 const renderDocx: Render = async (plugin, el, file) => {
 	const { value } = await mammoth.convertToHtml({ arrayBuffer: await plugin.app.vault.readBinary(file) });
 	const body = el.createDiv({ cls: 'markdown-rendered zk-docx' });
-	cleanInto(body, value);
+	cleanInto(body, value, 'body > *');
 };
 
 const renderXlsx: Render = async (plugin, el, file) => {

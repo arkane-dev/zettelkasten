@@ -37,6 +37,10 @@ class Config:
     embed_model: str = 'nomic-embed-text'
     single_file: str = ''
     browser: str = ''
+    #: A Python with ipykernel for code. Empty means the vault's own, in .zk/python.
+    python: str = ''
+    #: Kernels with nothing to do shut down after this long.
+    kernel_idle_minutes: float = 60
 
     @classmethod
     def from_env(cls, vault: Path, env: dict[str, str] | None = None) -> 'Config':
@@ -59,6 +63,7 @@ class Config:
             embed_model=env.get('ZK_EMBED_MODEL') or defaults.embed_model,
             single_file=env.get('ZK_SINGLE_FILE') or find_single_file(),
             browser=env.get('ZK_BROWSER') or find_browser(),
+            python=env.get('ZK_PYTHON', ''),
         )
 
     def public(self) -> dict:
@@ -72,4 +77,5 @@ class Config:
             'embed_model': self.embed_model,
             'single_file': self.single_file,
             'browser': self.browser,
+            'python': self.python,
         }

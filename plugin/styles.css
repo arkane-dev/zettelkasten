@@ -86,3 +86,121 @@
 	border-color: var(--interactive-accent);
 	color: var(--text-normal);
 }
+
+/* Runnable code blocks */
+.zk-code pre {
+	margin-bottom: 0;
+}
+.zk-code-bar,
+.zk-nb-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-1);
+	margin: var(--size-4-1) 0;
+	font-size: var(--font-ui-small);
+}
+.zk-code-bar button,
+.zk-nb-bar button,
+.zk-cell-tools button,
+.zk-nb-add button {
+	font-size: var(--font-ui-smaller);
+	padding: var(--size-2-1) var(--size-4-2);
+	height: auto;
+}
+.zk-code-count {
+	font-family: var(--font-monospace);
+	color: var(--text-muted);
+	min-width: 3ch;
+}
+.zk-code-status {
+	color: var(--text-muted);
+	white-space: pre-wrap;
+}
+.zk-hidden {
+	display: none;
+}
+.zk-code-out:not(:empty) {
+	border-left: 2px solid var(--background-modifier-border);
+	padding-left: var(--size-4-2);
+	margin-top: var(--size-4-1);
+}
+.zk-out {
+	margin: var(--size-4-1) 0;
+}
+pre.zk-out {
+	max-height: 40em;
+	overflow: auto;
+	white-space: pre-wrap;
+	word-break: break-word;
+	background: transparent;
+	padding: 0;
+	font-size: var(--code-size);
+}
+.zk-out-stderr {
+	color: var(--text-warning);
+}
+.zk-out-error {
+	color: var(--text-error);
+}
+.zk-out-image {
+	max-width: 100%;
+	background: #fff;
+}
+.zk-out-html {
+	overflow: auto;
+}
+
+/* Notebooks */
+.zk-notebook {
+	padding: 0 var(--size-4-4) var(--size-4-8);
+}
+.zk-nb-bar {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	padding: var(--size-4-2) 0;
+	background: var(--background-primary);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+.zk-cell {
+	display: grid;
+	grid-template-columns: 5ch 1fr;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) 0;
+	border-bottom: 1px solid var(--background-modifier-border-hover);
+}
+.zk-cell-gutter {
+	padding-top: var(--size-4-2);
+	text-align: right;
+}
+.zk-cell-main {
+	min-width: 0;
+}
+.zk-cell-code {
+	margin: 0;
+	cursor: text;
+}
+.zk-cell-code:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+}
+.zk-cell-editor {
+	width: 100%;
+	min-height: 3em;
+	resize: vertical;
+	font-family: var(--font-monospace);
+	font-size: var(--code-size);
+	background: var(--code-background);
+	tab-size: 4;
+}
+.zk-cell-tools {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-1);
+	margin-top: var(--size-4-1);
+}
+.zk-nb-add {
+	display: flex;
+	gap: var(--size-4-2);
+	margin-top: var(--size-4-3);
+}

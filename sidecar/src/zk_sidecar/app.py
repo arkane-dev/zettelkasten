@@ -1,6 +1,7 @@
 """The HTTP API. Every route needs the session token."""
 import secrets
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
@@ -9,6 +10,8 @@ from pydantic import BaseModel
 from . import __version__
 from .config import Config
 from .jobs import Jobs
+from .kernels.env import VaultPython
+from .kernels.pool import KernelError, KernelPool
 from .sources.capture import capture, check_url
 from .sources.convert import KINDS, kind_of
 from .sources.service import SourceService
@@ -33,10 +36,29 @@ class UrlIn(BaseModel):
     url: str
 
 
-def create_app(config: Config, service: SourceService | None = None) -> FastAPI:
+class RunIn(BaseModel):
+    #: The note or notebook, relative to the vault. One kernel per path and kernel name.
+    path: str
+    code: str
+    kernel: str = ''
+    language: str = ''
+
+
+class KernelIn(BaseModel):
+    path: str
+    kernel: str = ''
+
+
+def create_app(config: Config, service: SourceService | None = None, pool: KernelPool | None = None) -> FastAPI:
     started = time.monotonic()
     sources = service or default_service(config)
     jobs = Jobs()
+    kernels = pool or KernelPool(VaultPython(config.vault, config.python), config.kernel_idle_minutes)
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        yield
+        kernels.close()
 
     def auth(authorization: str = Header('')):
         expected = f'Bearer {config.token}'
@@ -44,7 +66,8 @@ def create_app(config: Config, service: SourceService | None = None) -> FastAPI:
             raise HTTPException(401)
 
     app = FastAPI(title='zk-sidecar', version=__version__, dependencies=[Depends(auth)],
-                  docs_url=None, redoc_url=None, openapi_url=None)
+                  docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
+    app.state.kernels = kernels
 
     @app.get('/health')
     def health():
@@ -102,5 +125,37 @@ def create_app(config: Config, service: SourceService | None = None) -> FastAPI:
     def summarise(slug: str):
         existing(slug)
         return jobs.submit('summarise', lambda job: sources.resummarise(job, slug)).public()
+
+    @app.get('/kernels')
+    def list_kernels():
+        return {'kernels': kernels.kernels(), 'running': kernels.status(),
+                'python': str(kernels.env.python), 'python_ready': not kernels.env.needs_setup()}
+
+    @app.post('/runs', status_code=202)
+    def start_run(body: RunIn):
+        if not body.code.strip():
+            raise HTTPException(400, 'There is no code to run.')
+        try:
+            return kernels.run(body.path, body.code, body.kernel, body.language).public()
+        except KernelError as e:
+            raise HTTPException(400, str(e)) from None
+
+    @app.get('/runs/{run_id}')
+    def get_run(run_id: str, since: int = -1, wait: float = Query(0, ge=0, le=10)):
+        if not (run := kernels.get(run_id)):
+            raise HTTPException(404, 'no such run')
+        return run.wait(since, wait) if wait else run.public()
+
+    def on_kernels(action):
+        def route(body: KernelIn):
+            try:
+                return {'kernels': action(body.path, body.kernel)}
+            except KernelError as e:
+                raise HTTPException(400, str(e)) from None
+        return route
+
+    app.post('/kernels/interrupt')(on_kernels(kernels.interrupt))
+    app.post('/kernels/restart')(on_kernels(kernels.restart))
+    app.post('/kernels/shutdown')(on_kernels(kernels.shutdown))
 
     return app

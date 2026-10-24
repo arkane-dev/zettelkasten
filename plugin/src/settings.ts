@@ -12,6 +12,8 @@ export interface ZkSettings {
 	embedModel: string;
 	/** Chromium for SingleFile. Empty means the sidecar finds one. */
 	browserPath: string;
+	/** A Python with ipykernel for code. Empty means the vault's own, in .zk/python. */
+	pythonPath: string;
 }
 
 export const DEFAULT_SETTINGS: ZkSettings = {
@@ -21,7 +23,8 @@ export const DEFAULT_SETTINGS: ZkSettings = {
 	llmApiKey: '',
 	llmContext: '8192',
 	embedModel: 'nomic-embed-text',
-	browserPath: ''
+	browserPath: '',
+	pythonPath: ''
 };
 
 /** Fill gaps from the defaults. Unknown keys from older versions are dropped. */
@@ -42,6 +45,7 @@ export function sidecarEnv(s: ZkSettings): Record<string, string> {
 		ZK_LLM_API_KEY: s.llmApiKey,
 		ZK_LLM_CONTEXT: s.llmContext,
 		ZK_EMBED_MODEL: s.embedModel,
-		ZK_BROWSER: s.browserPath
+		ZK_BROWSER: s.browserPath,
+		ZK_PYTHON: s.pythonPath
 	};
 }

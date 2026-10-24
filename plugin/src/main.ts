@@ -5,6 +5,8 @@ import { Sidecar, SidecarState } from './sidecar';
 import { registerReaders } from './readers';
 import { AddSourceModal, Ingest } from './ingest';
 import { isSourceFile } from './jobs';
+import { CodeRunner } from './codeblocks';
+import { NOTEBOOK_VIEW, NotebookView, createNotebook } from './notebook';
 
 const LABELS: Record<SidecarState, string> = {
 	stopped: 'ZK: stopped',
@@ -17,6 +19,7 @@ export default class Zettelkasten extends Plugin {
 	settings: ZkSettings = { ...DEFAULT_SETTINGS };
 	sidecar!: Sidecar;
 	ingest!: Ingest;
+	code!: CodeRunner;
 	private status!: HTMLElement;
 
 	async onload() {
@@ -46,7 +49,10 @@ export default class Zettelkasten extends Plugin {
 				}
 				return { status: r.status, json };
 			},
-			onChange: (state) => this.showState(state)
+			onChange: (state) => {
+				this.showState(state);
+				if (state === 'ready') this.code?.refreshKernels();
+			}
 		});
 		this.showState('stopped');
 
@@ -91,6 +97,32 @@ export default class Zettelkasten extends Plugin {
 				);
 			})
 		);
+
+		this.code = new CodeRunner(this);
+		this.code.register('python');
+		this.registerView(NOTEBOOK_VIEW, (leaf) => new NotebookView(leaf, this));
+		this.registerExtensions(['ipynb'], NOTEBOOK_VIEW);
+		this.addCommand({ id: 'new-notebook', name: 'New notebook', callback: () => createNotebook(this) });
+		const onNote = (id: string, name: string, fn: (file: TFile) => unknown) =>
+			this.addCommand({
+				id,
+				name,
+				checkCallback: (checking) => {
+					const file = this.app.workspace.getActiveFile();
+					if (!file || (file.extension !== 'md' && file.extension !== 'ipynb')) return false;
+					if (!checking) fn(file);
+					return true;
+				}
+			});
+		onNote('run-all-code', 'Run all code in this note', (f) => {
+			if (f.extension === 'md') this.code.runAll(f);
+			else new Notice('Use Run all in the notebook toolbar.');
+		});
+		onNote('interrupt-code', 'Stop the running code', (f) => this.code.interrupt(f.path));
+		onNote('restart-kernel', "Restart this file's kernel", (f) => this.code.restart(f.path));
+		onNote('clear-code-output', 'Clear code output in this note', (f) => this.code.clearAll(f.path));
+		this.registerEvent(this.app.vault.on('delete', (f) => this.code.shutdown(f.path)));
+		this.registerEvent(this.app.vault.on('rename', (_f, old) => this.code.shutdown(old)));
 
 		this.app.workspace.onLayoutReady(() => this.startSidecar(false));
 	}
@@ -167,6 +199,11 @@ class ZkSettingTab extends PluginSettingTab {
 			.setName('Browser for saving pages')
 			.setDesc('Chromium or Chrome. Leave empty to find one.')
 			.addText((t) => this.bind(t, 'browserPath', 'auto'));
+
+		new Setting(containerEl)
+			.setName('Python for code')
+			.setDesc('A Python with ipykernel. Leave empty to use this vault\'s own, made in .zk/python on the first run.')
+			.addText((t) => this.bind(t, 'pythonPath', 'vault Python'));
 
 		new Setting(containerEl).setName('Models').setHeading();
 		new Setting(containerEl)

@@ -14,10 +14,11 @@ dependencies = [
     "rapidocr-onnxruntime>=1.4",
     "trafilatura>=2.3",
     "markitdown[docx,xlsx,pptx]>=0.1.8",
+    "jupyter_client>=8.6",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx2>=2.14"]
+dev = ["pytest>=8", "httpx2>=2.14", "ipykernel>=6.29", "matplotlib>=3.9"]
 
 [project.scripts]
 zk-sidecar = "zk_sidecar.__main__:main"

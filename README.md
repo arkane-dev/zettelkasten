@@ -8,7 +8,7 @@ Design: [Zettelkasten: Obsidian plugin or ground-up build?](https://andrewrkane.
 
 ```text
 plugin/    Obsidian plugin (TypeScript, esbuild). Desktop only.
-sidecar/   Python service (FastAPI). No UI, localhost only.
+sidecar/   Python service (FastAPI, jupyter_client). No UI, localhost only.
 scripts/   new-vault.sh, dev-obsidian.sh
 spike/     Phase 0 experiments. Not part of the build.
 ```
@@ -34,6 +34,27 @@ Sources/<slug>/
 - The same file or URL twice opens the source you already have.
 - Text: PyMuPDF for PDFs, with OCR on pages that have no text. trafilatura for web pages. MarkItDown for Office files.
 
+## Code
+
+Add `run` after the language in a code block's fence line:
+
+````markdown
+```python run
+x = 21
+print(x * 2)
+```
+````
+
+- **Buttons:** Run, Run all, Stop, Restart, Pin and Clear sit under each block. Blocks without `run` stay plain code.
+- **Kernels:** one Jupyter kernel per note, so variables carry from block to block. Idle kernels stop after an hour.
+- **Python:** each vault gets its own, in `.zk/python`, made with uv on the first run. Install packages from a block with `%pip install pandas`. To use another Python, set "Python for code" in the settings. It needs ipykernel.
+- **Other languages:** any Jupyter kernel installed on the machine works. Its language becomes runnable, like ```` ```r run ````.
+- **Output:** text, errors, images, HTML tables and Markdown. It's cached in `.zk/outputs/`, so the note stays clean.
+- **Pin:** writes the output into the note, below the block, between `<!-- zk:output -->` markers. Images become attachments. Pinning again replaces it.
+- **Commands:** "Run all code in this note", "Stop the running code", "Restart this file's kernel", "Clear code output in this note".
+
+Notebooks (`.ipynb`) open in their own view: cells, outputs, a kernel picker, Run all, Stop and Restart. Click a code cell to edit it. Shift+Enter runs it and moves on. Ctrl+Enter runs it and stays. Outputs save into the file, which still opens in Jupyter. "New notebook" makes one.
+
 ## Develop
 
 Needs `uv` and Obsidian. Saving web pages needs Chromium: the system one, or Playwright's in `~/.cache/ms-playwright`.
@@ -58,7 +79,7 @@ This copies the plugin in and points it at this repo's sidecar. Open the folder 
 
 ## Status
 
-Phase 2, sources. Next is Phase 3: notebooks and runnable code.
+Phase 3, notebooks and runnable code. Next is Phase 4: GraphRAG communities.
 
 ## Licence
 
